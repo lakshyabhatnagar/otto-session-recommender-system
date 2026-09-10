@@ -50,3 +50,4 @@ def add_session_features(candidates: pl.DataFrame, session_events: pl.DataFrame)
     )
 
     return df
+
