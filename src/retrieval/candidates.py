@@ -19,7 +19,7 @@ def generate_candidates(
     type_matrix: pl.DataFrame,
     time_matrix: pl.DataFrame,
     buy_matrix: pl.DataFrame,
-    general_k: int = 30,
+    general_k: int = 50,
     type_k: int = 20,
     time_k: int = 20,
     buy_k: int = 20
