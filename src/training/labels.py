@@ -5,7 +5,7 @@ def add_labels(candidates: pl.DataFrame, ground_truth: pl.DataFrame) -> pl.DataF
     df = candidates.join(ground_truth, on="session", how="left")
 
     df = df.with_columns(
-        (pl.col("candidate") == pl.col("click_target")).cast(pl.Int8).alias("click_label"),
+        (pl.col("candidate") == pl.col("click_target")).fill_null(False).cast(pl.Int8).alias("click_label"),
 
         pl.col("cart_targets")
         .list.contains(pl.col("candidate"))

@@ -58,7 +58,7 @@ def build_covisitation_matrix(events: pl.DataFrame, weighting: str = "general", 
     matrix = (
         pairs.group_by(["aid_x", "aid_y"])
         .agg(pl.col("weight").sum().alias("score"))
-        .sort(["aid_x", "score"], descending=[False, True])
+        .sort(["aid_x", "score", "aid_y"], descending=[False, True, False])
         .group_by("aid_x", maintain_order=True)
         .head(top_k)
     )
