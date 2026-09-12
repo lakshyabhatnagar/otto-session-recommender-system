@@ -47,6 +47,7 @@ def generate_candidates(
         for aid in items:
             candidate_data[aid] = {
                 "general_score": 0.0,
+                "general_recency_score": 0.0,
                 "type_score": 0.0,
                 "time_score": 0.0,
                 "buy_score": 0.0
@@ -61,11 +62,14 @@ def generate_candidates(
 
         for score_name, lookup, top_k in matrices:
             scores = {}
+            recency_scores = {}
 
             # Aggregate evidence from all actual session items
-            for aid in items:
+            for position, aid in enumerate(items):
                 for candidate, score in lookup.get(aid, []):
                     scores[candidate] = scores.get(candidate, 0) + score
+                    if score_name == "general_score":
+                        recency_scores[candidate] = recency_scores.get(candidate, 0) + score / (position + 1)
 
             # Keep only the best candidates from this source
             best_candidates = sorted(scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -74,12 +78,15 @@ def generate_candidates(
                 if candidate not in candidate_data:
                     candidate_data[candidate] = {
                         "general_score": 0.0,
+                        "general_recency_score": 0.0,
                         "type_score": 0.0,
                         "time_score": 0.0,
                         "buy_score": 0.0
                     }
 
                 candidate_data[candidate][score_name] = score
+                if score_name == "general_score":
+                    candidate_data[candidate]["general_recency_score"] = recency_scores[candidate]
 
         for candidate, scores in candidate_data.items():
             output.append({

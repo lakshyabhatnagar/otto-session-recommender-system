@@ -4,6 +4,7 @@ from xgboost import XGBClassifier
 
 FEATURES = [
     "general_score",
+    "general_recency_score",
     "type_score",
     "time_score",
     "buy_score",
