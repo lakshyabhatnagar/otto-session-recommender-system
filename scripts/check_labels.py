@@ -5,7 +5,7 @@ import polars as pl
 from src.retrieval.candidates import generate_candidates
 from src.retrieval.covisitation import build_covisitation_matrix
 from src.training.labels import add_labels
-from src.training.train_xgb import split_by_session
+from src.training.validation import split_by_session
 
 
 def main():

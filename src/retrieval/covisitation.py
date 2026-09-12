@@ -2,9 +2,15 @@ import polars as pl
 
 DAY_MS = 24 * 60 * 60 * 1000
 TYPE_WEIGHTS = {"clicks": 1.0, "carts": 6.0, "orders": 3.0}
+VALID_WEIGHTINGS = {"general", "type", "time", "buy_to_buy"}
 
 
 def build_covisitation_matrix(events: pl.DataFrame, weighting: str = "general", top_k: int = 50) -> pl.DataFrame:
+    if weighting not in VALID_WEIGHTINGS:
+        raise ValueError(f"Unknown weighting: {weighting}")
+    if top_k < 1:
+        raise ValueError("top_k must be positive")
+
     df = events
 
     if weighting == "buy_to_buy":
@@ -37,22 +43,26 @@ def build_covisitation_matrix(events: pl.DataFrame, weighting: str = "general", 
         ((pl.col("ts_x") - pl.col("ts_y")).abs() < DAY_MS)
     )
 
-    pairs = pairs.unique(["session", "aid_x", "aid_y"])
-
     if weighting == "type":
         pairs = pairs.with_columns(
             pl.col("type_y").replace_strict(TYPE_WEIGHTS).alias("weight")
         )
+        pairs = pairs.group_by(["session", "aid_x", "aid_y"]).agg(pl.col("weight").max().alias("weight"))
 
     elif weighting == "time":
         min_ts = events["ts"].min()
         max_ts = events["ts"].max()
-
-        pairs = pairs.with_columns(
-            (1 + 3 * (pl.col("ts_x") - min_ts) / (max_ts - min_ts)).alias("weight")
-        )
+        pairs = pairs.with_columns(pl.max_horizontal("ts_x", "ts_y").alias("pair_ts"))
+        pairs = pairs.group_by(["session", "aid_x", "aid_y"]).agg(pl.col("pair_ts").max().alias("pair_ts"))
+        if min_ts == max_ts:
+            pairs = pairs.with_columns(pl.lit(1.0).alias("weight"))
+        else:
+            pairs = pairs.with_columns(
+                (1 + 3 * (pl.col("pair_ts") - min_ts) / (max_ts - min_ts)).alias("weight")
+            )
 
     else:
+        pairs = pairs.unique(["session", "aid_x", "aid_y"], keep="first", maintain_order=True)
         pairs = pairs.with_columns(pl.lit(1.0).alias("weight"))
 
     matrix = (

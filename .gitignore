@@ -12,3 +12,4 @@ venv/
 
 # Local datasets
 /data/
+/artifacts/

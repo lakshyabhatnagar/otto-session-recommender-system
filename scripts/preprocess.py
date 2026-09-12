@@ -1,4 +1,3 @@
-import pandas as pd
 import polars as pl
 import json
 import random
@@ -49,9 +48,10 @@ def sample_jsonl_sessions(
 
     df.write_parquet(output_path)
 
-sample_jsonl_sessions(
-input_path="data/raw/train.jsonl",
-output_path="data/processed/train_dev.parquet",
-n_sessions=100_000,
-seed=42,
-)
+if __name__ == "__main__":
+    sample_jsonl_sessions(
+        input_path="data/raw/train.jsonl",
+        output_path="data/processed/train_dev.parquet",
+        n_sessions=100_000,
+        seed=42,
+    )

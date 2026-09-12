@@ -32,15 +32,46 @@ def recall_at_k(predictions: pl.DataFrame, ground_truth: pl.DataFrame, target_co
             continue
 
         predicted = [] if predicted is None else predicted
+        limit = len(targets) if k is None else min(k, len(targets))
         if k is not None:
             predicted = predicted[:k]
-        total_hits += len(set(predicted) & targets)
-        total_targets += min(20, len(targets))
+        total_hits += min(limit, len(set(predicted) & targets))
+        total_targets += limit
 
     return total_hits / total_targets if total_targets else 0.0
 
 
 def evaluate_predictions(predictions: pl.DataFrame, ground_truth: pl.DataFrame, k: int | None = 20) -> dict[str, float]:
     scores = {objective: recall_at_k(predictions, ground_truth, target_column, k) for objective, target_column in TARGET_COLUMNS.items()}
+    scores["weighted"] = 0.10 * scores["clicks"] + 0.30 * scores["carts"] + 0.60 * scores["orders"]
+    return scores
+
+
+def candidate_target_coverage(candidates: pl.DataFrame, ground_truth: pl.DataFrame) -> dict[str, float]:
+    predictions = candidate_lists(candidates)
+    return {objective: recall_at_k(predictions, ground_truth, target_column, k=None) for objective, target_column in TARGET_COLUMNS.items()}
+
+
+def oracle_recall_at_k(candidates: pl.DataFrame, ground_truth: pl.DataFrame, k: int = 20) -> dict[str, float]:
+    predictions = candidate_lists(candidates)
+    scores = {}
+
+    for objective, target_column in TARGET_COLUMNS.items():
+        total_hits = 0
+        total_targets = 0
+        evaluation = ground_truth.join(predictions, on="session", how="left")
+
+        for target, predicted in evaluation.select(target_column, "predictions").iter_rows():
+            if target is None:
+                continue
+            targets = set(target if isinstance(target, list) else [target])
+            if not targets:
+                continue
+            predicted = [] if predicted is None else predicted
+            total_hits += min(k, len(set(predicted) & targets))
+            total_targets += min(k, len(targets))
+
+        scores[objective] = total_hits / total_targets if total_targets else 0.0
+
     scores["weighted"] = 0.10 * scores["clicks"] + 0.30 * scores["carts"] + 0.60 * scores["orders"]
     return scores

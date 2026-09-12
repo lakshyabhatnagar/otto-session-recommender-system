@@ -1,7 +1,8 @@
 import polars as pl
 
-def add_item_features(candidates: pl.DataFrame, events: pl.DataFrame) -> pl.DataFrame:
-    item_features = (
+
+def build_item_features(events: pl.DataFrame) -> pl.DataFrame:
+    return (
         events
         .group_by("aid")
         .agg(
@@ -11,7 +12,13 @@ def add_item_features(candidates: pl.DataFrame, events: pl.DataFrame) -> pl.Data
             (pl.col("type") == "orders").sum().alias("global_order_count"),
             pl.col("session").n_unique().alias("unique_sessions")
         )
+        .rename({"aid": "candidate"})
     )
-    item_features = item_features.rename({"aid": "candidate"})
-    df=candidates.join(item_features, on="candidate", how="left")
-    return df
+
+
+def add_item_features(candidates: pl.DataFrame, events: pl.DataFrame | None = None, item_features: pl.DataFrame | None = None) -> pl.DataFrame:
+    if item_features is None:
+        if events is None:
+            raise ValueError("events or item_features is required")
+        item_features = build_item_features(events)
+    return candidates.join(item_features, on="candidate", how="left")
