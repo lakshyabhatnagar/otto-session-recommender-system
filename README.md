@@ -60,10 +60,6 @@ print(predictions["orders"])
 
 `predictions` contains one `session, predictions` table for each objective. It does not access labels or retrain the model.
 
-## Resume description
-
-Built a CPU-based multi-objective session recommender for OTTO e-commerce events using co-visitation candidate retrieval, 28 session/item/retrieval features, and separate XGBoost click/cart/order scoring models. Implemented session-safe validation, candidate coverage diagnostics, model artifact persistence, and reusable batch inference; achieved 0.4458 weighted Recall@20 on a 100k-session development split.
-
 ## Current limitations
 
 - Validation uses randomly held-out sessions with a positional history/future split; it is not yet a chronological future-time evaluation.
